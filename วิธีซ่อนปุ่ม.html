@@ -1,0 +1,103 @@
+แบบที่ 1 แบบซ่อน
+
+<!-- ==========  จากโค้ด index บรรทัดที่ 422 =========== -->
+
+<button 
+id="admin-setup-btn" 
+class="w-full py-2 rounded-lg transition-all"
+ style="background-color: transparent; color: ${config.primary_color}; font-size: ${config.font_size * 0.9}px; border: 2px solid ${config.primary_color};">
+    ตั้งค่าระบบ (Admin)
+</button>
+
+
+<!--========= เป็นซ่อนปุ่ม ============== -->
+
+<button
+  id="admin-setup-btn"
+  class="w-full py-2 rounded-lg transition-all hidden"
+  style="background-color: transparent; color: ${config.primary_color}; font-size: ${config.font_size * 0.9}px; border: 2px solid ${config.primary_color};">
+  ตั้งค่าระบบ (Admin)
+</button>
+
+
+วิธีที่ 2 ไว้แต่ใช่รหัสป้องกันเฉพาะ Admin
+
+ขั้นตอนที่ 1 : นำโค้ด button ไปแทน button เดิม บรรที่ 422
+  วาง CDN sweetalert2 ใต้ <head>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<button 
+  id="admin-setup-btn"
+  class="w-full py-2 rounded-lg transition-all"
+  style="background-color: transparent; color: ${config.primary_color}; font-size: ${config.font_size * 0.9}px; border: 2px solid ${config.primary_color};">
+  ตั้งค่าระบบ (Admin)
+</button>
+
+ขั้นตอนที่ 2 : นำ javascript ไปวางถัดไป 
+
+// ======================================
+// ปุ่มตั้งค่าระบบ (Admin)
+// ======================================
+document.addEventListener("click", async (e) => {
+  if (e.target && e.target.id === "admin-setup-btn") {
+
+    const result = await Swal.fire({
+      title: "เข้าสู่โหมดผู้ดูแลระบบ",
+      text: "กรอกรหัสผ่าน Admin",
+      input: "password",
+      inputPlaceholder: "รหัสผ่าน",
+      confirmButtonText: "ยืนยัน",
+      showCancelButton: true,
+      cancelButtonText: "ยกเลิก"
+    });
+
+    // กดปิด / ยกเลิก = ทำเหมือนปุ่มกลับ
+    if (result.isDismissed) {
+
+      document.getElementById("back-to-login")?.click();
+
+      return;
+    }
+
+    const password = result.value;
+
+    if (!password) {
+      await Swal.fire({
+        icon: "warning",
+        title: "กรุณากรอกรหัสผ่าน",
+        timer: 1200,
+        showConfirmButton: false
+      });
+      document.getElementById("back-to-login")?.click();
+      return;
+    }
+
+    const ADMIN_PASSWORD = "123456";
+
+    if (password === ADMIN_PASSWORD) {
+
+      await Swal.fire({
+        icon: "success",
+        title: "เข้าสู่โหมด Admin",
+        timer: 900,
+        showConfirmButton: false
+      });
+
+      document.getElementById("app").innerHTML = renderAdminSetup(config);
+
+      return;
+    }
+
+    Swal.fire({
+      icon: "error",
+      title: "รหัสผ่านไม่ถูกต้อง",
+      text: "กรุณาลองอีกครั้ง"
+    });
+      document.getElementById("back-to-login")?.click();
+
+      return;
+  }
+});
+
+
+==========================================
