@@ -326,9 +326,9 @@ let selectedClassroom = null, selectedMonth = null, selectedRound = 1;
 let config = {}, VIOLATIONS = [], MONTHS = [];
 
 // ============================================================
-// WEB APP URL (ใส่ URL ของ Web App หลังจาก Deploy ใน Google Apps Script)
+// WEB APP URL (ใช้สำหรับดึงข้อมูลบน GitHub Pages)
 // ============================================================
-let WEB_APP_URL = "https://script.google.com/macros/s/AKfycb.../exec"; // เปลี่ยนเป็น Web App Exec URL ของคุณ
+let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxx6MuECN5eCtZl6ZI-rhAhE4du-jJ6QubQInK-hgUmmDmabDaSkoPSDF-FgTKfIg8/exec";
 
 // ============================================================
 // UNIVERSAL GS / GITHUB PAGES PROXY
@@ -697,7 +697,21 @@ function doLogin() {
   const u = document.getElementById('lg-user').value.trim();
   const p = document.getElementById('lg-pass').value.trim();
   const err = document.getElementById('login-error');
-  const t = allData.find(d => d.type === 'teacher' && String(d.teacher_username).trim() === u && String(d.teacher_password).trim() === p);
+  
+  let t = allData.find(d => d.type === 'teacher' && String(d.teacher_username).trim() === u && String(d.teacher_password).trim() === p);
+  
+  // สำรองกรณีเข้าใช้งานด้วยรหัส admin เริ่มต้น
+  if (!t && u === 'admin' && p === 'admin123') {
+    t = {
+      id: 'teacher_admin',
+      type: 'teacher',
+      teacher_username: 'admin',
+      teacher_password: 'admin123',
+      teacher_name: 'ผู้ดูแลระบบ',
+      classroom: ''
+    };
+  }
+
   if (t) {
     currentUser = t;
     currentView = 'dashboard';
