@@ -73,29 +73,75 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+// ============================================
+// AUTHENTICATION — ปลอดภัย ตรวจสอบที่หลังบ้านเท่านั้น
+// ============================================
+function authenticateUser(username, password) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sh = ss.getSheetByName('Teachers');
+    if (!sh) return { success: false, message: 'ไม่พบตารางข้อมูลครู' };
+    
+    const rows = sh.getDataRange().getValues();
+    const u = String(username || '').trim().toLowerCase();
+    const p = String(password || '').trim();
+
+    for (let i = 1; i < rows.length; i++) {
+      const rowU = String(rows[i][2] || '').trim().toLowerCase();
+      const rowP = String(rows[i][3] || '').trim();
+      if (rowU === u && rowP === p) {
+        return {
+          success: true,
+          user: {
+            id: String(rows[i][0]),
+            type: 'teacher',
+            teacher_username: String(rows[i][2] || '').trim(),
+            teacher_name: String(rows[i][4] || ''),
+            classroom: String(rows[i][5] || ''),
+            created_at: String(rows[i][6] || '')
+          }
+        };
+      }
+    }
+    return { success: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
+  } catch(e) {
+    Logger.log('authenticateUser error: ' + e);
+    return { success: false, message: e.toString() };
+  }
+}
+
 function handleApiRequest(action, dataArg) {
   let result = { success: false, message: 'Invalid action: ' + action };
   try {
-    if (action === 'getInitData') {
+    let parsedData = dataArg;
+    if (typeof dataArg === 'string') {
+      try { parsedData = JSON.parse(dataArg); } catch(e) {}
+    } else if (dataArg && dataArg.payload) {
+      try { parsedData = typeof dataArg.payload === 'string' ? JSON.parse(dataArg.payload) : dataArg.payload; } catch(e) {}
+    }
+
+    if (action === 'authenticateUser' || action === 'login') {
+      result = authenticateUser(parsedData.username || parsedData.u, parsedData.password || parsedData.p);
+    } else if (action === 'getInitData') {
       result = getInitData();
     } else if (action === 'getData') {
       result = getData();
     } else if (action === 'getConfig') {
       result = getConfig();
     } else if (action === 'saveConfig') {
-      result = saveConfig(dataArg);
+      result = saveConfig(parsedData);
     } else if (action === 'initializeData') {
       result = initializeSheets();
     } else if (action === 'createRecord') {
-      result = createRecord(dataArg);
+      result = createRecord(parsedData);
     } else if (action === 'updateRecord') {
-      result = updateRecord(dataArg);
+      result = updateRecord(parsedData);
     } else if (action === 'deleteRecord') {
-      result = deleteRecord(dataArg);
+      result = deleteRecord(parsedData);
     } else if (action === 'replaceChecks') {
-      result = replaceChecks(dataArg);
+      result = replaceChecks(parsedData);
     } else if (action === 'logLogin') {
-      result = logLogin(dataArg);
+      result = logLogin(parsedData);
     }
   } catch(e) {
     result = { success: false, message: e.toString() };
@@ -247,14 +293,13 @@ function getData() {
       return vals.length > 1 ? vals.slice(1) : [];
     }
 
-    // Teachers
+    // Teachers (ตัด teacher_password ออกเพื่อความปลอดภัย ไม่ส่งไปหน้าเว็บ)
     readSheet('Teachers').forEach(r => {
       if (!r[0]) return;
       result.push({
         id: String(r[0]),
         type: 'teacher',
         teacher_username: String(r[2]||'').trim(),
-        teacher_password: String(r[3]||'').trim(),
         teacher_name:     String(r[4]||''),
         classroom:        String(r[5]||''),
         created_at:       String(r[6]||'')
