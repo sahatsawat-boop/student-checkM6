@@ -157,11 +157,12 @@ function doPost(e) {
   try {
     let payload = {};
     if (e && e.postData && e.postData.contents) {
-      payload = JSON.parse(e.postData.contents);
+      try { payload = JSON.parse(e.postData.contents); } catch(err) {}
     }
-    const action = payload.action;
+    const action = payload.action || (e && e.parameter && e.parameter.action);
     let dataArg = payload.payload !== undefined ? payload.payload : (payload.data !== undefined ? payload.data : payload.config);
-    return handleApiRequest(action, dataArg || payload);
+    if (dataArg === undefined) dataArg = payload;
+    return handleApiRequest(action, dataArg);
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
