@@ -348,26 +348,41 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
         if (fnName === 'withSuccessHandler') return (cb) => { _success = cb; return runner; };
         if (fnName === 'withFailureHandler') return (cb) => { _failure = cb; return runner; };
         return (arg) => {
-          const apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
+          let apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
           
-          fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg })
-          })
-          .then(res => res.json())
-          .then(res => { if (_success) _success(res); })
-          .catch(err => {
-            // สำรองหาก POST ติด CORS/Redirect ให้ใช้ GET สำหรับอ่านข้อมูล
-            if (['getInitData', 'getData', 'getConfig'].includes(fnName)) {
-              fetch(apiUrl)
+          if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
+            for (const k in arg) {
+              if (arg[k] !== undefined && arg[k] !== null && typeof arg[k] !== 'object') {
+                apiUrl += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(arg[k]);
+              }
+            }
+          }
+
+          // สำหรับฟังก์ชันอ่านข้อมูลและล็อกอิน ให้ใช้ GET นำเพื่อรอดพ้นการโดนตัด Body ตอน 302 Redirect
+          if (['getInitData', 'getData', 'getConfig', 'authenticateUser', 'login'].includes(fnName)) {
+            fetch(apiUrl)
+              .then(res => res.json())
+              .then(res => { if (_success) _success(res); })
+              .catch(err => {
+                fetch(apiUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg, ...(arg || {}) })
+                })
                 .then(res => res.json())
                 .then(res => { if (_success) _success(res); })
                 .catch(e => { if (_failure) _failure(e); });
-            } else {
-              if (_failure) _failure(err);
-            }
-          });
+              });
+          } else {
+            fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg, ...(arg || {}) })
+            })
+            .then(res => res.json())
+            .then(res => { if (_success) _success(res); })
+            .catch(err => { if (_failure) _failure(err); });
+          }
         };
       }
     });
@@ -380,11 +395,18 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
         return runner[fnName].bind(runner);
       }
       return (arg) => {
-        const apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
+        let apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
+        if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
+          for (const k in arg) {
+            if (arg[k] !== undefined && arg[k] !== null && typeof arg[k] !== 'object') {
+              apiUrl += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(arg[k]);
+            }
+          }
+        }
         fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg })
+          body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg, ...(arg || {}) })
         }).catch(() => {});
       };
     }
