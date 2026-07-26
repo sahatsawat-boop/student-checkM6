@@ -499,9 +499,16 @@ function replaceChecks(payload) {
     const sheet = ss.getSheetByName('Checks');
     const now   = getThaiDateTime();
 
+    const CHECKS_HEADERS = [
+      'ID', 'Type', 'Classroom', 'Student Number', 'Month', 'Round',
+      'Uniform', 'Undershirt', 'Collar', 'Belt', 'Hairbow', 'Hairstyle',
+      'Facial', 'HairAccessory', 'Socks', 'Shoes', 'Jewelry', 'Nails',
+      'All Correct', 'Created At'
+    ]; // 20 columns
+    const TARGET_COLS = CHECKS_HEADERS.length; // 20
+
     // 1. Memory-based batch filtering: read all rows, filter out target classroom+month+round
     const allRows = sheet.getDataRange().getValues();
-    const headers = allRows[0];
     const remainingRows = allRows.slice(1).filter(row => {
       const match = String(row[2]) === String(payload.classroom) &&
                     String(row[4]) === String(payload.month) &&
@@ -509,14 +516,17 @@ function replaceChecks(payload) {
       return !match; // Keep rows that do not match
     });
 
-    // ป้องกันการสูญเสียศูนย์นำหน้า (เช่น 01 โดนเปลี่ยนเป็น 1)
-    remainingRows.forEach(row => {
-      if (row[3] !== undefined && row[3] !== null) {
-        row[3] = "'" + String(row[3]).replace(/'/g, '');
+    // Normalize remaining rows to exactly 20 columns (trim extra columns if original sheet had 22 columns)
+    const cleanRemainingRows = remainingRows.map(row => {
+      let r = row.slice(0, TARGET_COLS);
+      if (r[3] !== undefined && r[3] !== null) {
+        r[3] = "'" + String(r[3]).replace(/'/g, '');
       }
+      while (r.length < TARGET_COLS) r.push('');
+      return r;
     });
 
-    // 2. Build the new rows to append
+    // 2. Build the new rows to append (exactly 20 columns)
     const newRows = (payload.checks || []).map(data => [
       data.id,
       'check',
@@ -540,12 +550,12 @@ function replaceChecks(payload) {
       now
     ]);
 
-    // Combine remaining and new rows
-    const updatedRows = [headers, ...remainingRows, ...newRows];
+    // Combine headers, clean remaining rows, and new rows
+    const updatedRows = [CHECKS_HEADERS, ...cleanRemainingRows, ...newRows];
 
-    // Clear and write in a single operation
+    // Clear entire sheet contents to remove obsolete columns
     sheet.clearContents();
-    sheet.getRange(1, 1, updatedRows.length, headers.length).setValues(updatedRows);
+    sheet.getRange(1, 1, updatedRows.length, TARGET_COLS).setValues(updatedRows);
     SpreadsheetApp.flush();
 
     // 3. Batch recalculate scores for everyone in this classroom
