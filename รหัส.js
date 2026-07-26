@@ -63,11 +63,45 @@ function cleanNumber(val) {
 // ============================================
 // Web App Entry Point
 // ============================================
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    return handleApiRequest(e.parameter.action, e.parameter);
+  }
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('ระบบเช็คระเบียบนักเรียน ม.6 โรงเรียนธัญบุรี')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function handleApiRequest(action, dataArg) {
+  let result = { success: false, message: 'Invalid action: ' + action };
+  try {
+    if (action === 'getInitData') {
+      result = getInitData();
+    } else if (action === 'getData') {
+      result = getData();
+    } else if (action === 'getConfig') {
+      result = getConfig();
+    } else if (action === 'saveConfig') {
+      result = saveConfig(dataArg);
+    } else if (action === 'initializeData') {
+      result = initializeSheets();
+    } else if (action === 'createRecord') {
+      result = createRecord(dataArg);
+    } else if (action === 'updateRecord') {
+      result = updateRecord(dataArg);
+    } else if (action === 'deleteRecord') {
+      result = deleteRecord(dataArg);
+    } else if (action === 'replaceChecks') {
+      result = replaceChecks(dataArg);
+    } else if (action === 'logLogin') {
+      result = logLogin(dataArg);
+    }
+  } catch(e) {
+    result = { success: false, message: e.toString() };
+  }
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ============================================
@@ -81,32 +115,7 @@ function doPost(e) {
     }
     const action = payload.action;
     let dataArg = payload.payload !== undefined ? payload.payload : (payload.data !== undefined ? payload.data : payload.config);
-    let result = { success: false, message: 'Invalid action: ' + action };
-
-    if (action === 'getInitData') {
-      result = getInitData();
-    } else if (action === 'getData') {
-      result = getData();
-    } else if (action === 'getConfig') {
-      result = getConfig();
-    } else if (action === 'saveConfig') {
-      result = saveConfig(dataArg || payload);
-    } else if (action === 'initializeData') {
-      result = initializeSheets();
-    } else if (action === 'createRecord') {
-      result = createRecord(dataArg || payload);
-    } else if (action === 'updateRecord') {
-      result = updateRecord(dataArg || payload);
-    } else if (action === 'deleteRecord') {
-      result = deleteRecord(dataArg || payload);
-    } else if (action === 'replaceChecks') {
-      result = replaceChecks(dataArg || payload);
-    } else if (action === 'logLogin') {
-      result = logLogin(dataArg || payload);
-    }
-
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
+    return handleApiRequest(action, dataArg || payload);
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
