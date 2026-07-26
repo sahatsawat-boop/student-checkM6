@@ -78,13 +78,20 @@ function doGet(e) {
 // ============================================
 function authenticateUser(username, password) {
   try {
+    let u = '', p = '';
+    if (typeof username === 'object' && username !== null) {
+      u = String(username.username || username.u || '').trim().toLowerCase();
+      p = String(username.password || username.p || '').trim();
+    } else {
+      u = String(username || '').trim().toLowerCase();
+      p = String(password || '').trim();
+    }
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sh = ss.getSheetByName('Teachers');
     if (!sh) return { success: false, message: 'ไม่พบตารางข้อมูลครู' };
     
     const rows = sh.getDataRange().getValues();
-    const u = String(username || '').trim().toLowerCase();
-    const p = String(password || '').trim();
 
     for (let i = 1; i < rows.length; i++) {
       const rowU = String(rows[i][2] || '').trim().toLowerCase();
