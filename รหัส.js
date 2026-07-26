@@ -14,6 +14,8 @@ const CONFIG = {
   academic_year: "2569",
   max_score: 100,
   violation_points: 5,
+  good_score_threshold: 80,
+  warning_score_threshold: 60,
   months: [
   //  { id: "may2569", name: "พฤษภาคม 2569" },
   //  { id: "jun2569", name: "มิถุนายน 2569" },
@@ -198,12 +200,16 @@ function saveConfig(newConfig) {
     if (newConfig.academic_year) CONFIG.academic_year = newConfig.academic_year;
     if (newConfig.max_score) CONFIG.max_score = Number(newConfig.max_score);
     if (newConfig.violation_points) CONFIG.violation_points = Number(newConfig.violation_points);
+    if (newConfig.good_score_threshold) CONFIG.good_score_threshold = Number(newConfig.good_score_threshold);
+    if (newConfig.warning_score_threshold) CONFIG.warning_score_threshold = Number(newConfig.warning_score_threshold);
 
     PropertiesService.getScriptProperties().setProperty('APP_CONFIG', JSON.stringify({
       school_name: CONFIG.school_name,
       academic_year: CONFIG.academic_year,
       max_score: CONFIG.max_score,
-      violation_points: CONFIG.violation_points
+      violation_points: CONFIG.violation_points,
+      good_score_threshold: CONFIG.good_score_threshold,
+      warning_score_threshold: CONFIG.warning_score_threshold
     }));
     return { success: true };
   } catch(e) {
