@@ -829,32 +829,6 @@ function renderDashboard() {
 // 1. โค้ดนี้ ให้เห็นทุกห้อง 
 // -------------------------------------------------------
 
-// function renderClassroomSelect() {
-//   const rooms = [...new Set(allData.filter(d=>d.type==='student').map(d=>d.classroom))].sort();
-//   const grads = [['#3b82f6','#1d4ed8'],['#06b6d4','#0891b2'],['#10b981','#059669'],['#f59e0b','#d97706'],['#ef4444','#dc2626'],['#8b5cf6','#7c3aed']];
-//   return layout(`
-//     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.25rem;">
-//       ${hamburgerBtn()}
-//       <h1 style="font-size:1.8rem;font-weight:700;color:#1e293b;">เลือกห้องเรียน</h1>
-//     </div>
-//     <p style="color:#64748b;margin-bottom:1.75rem;font-size:0.875rem;padding-left:3rem;">เลือกห้องที่ต้องการตรวจระเบียบ</p>
-//     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:1.25rem;">
-//       ${rooms.map((r,i)=>{
-//         const [f,t]=grads[i%grads.length];
-//         const cnt = allData.filter(d=>d.type==='student'&&d.classroom===r).length;
-//         return `<div class="g-card" style="--from:${f};--to:${t};cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;"
-//           onclick="selectedClassroom='${r}';selectedRound=1;currentView='check-students';render();"
-//           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 28px rgba(0,0,0,0.18)'"
-//           onmouseout="this.style.transform='';this.style.boxShadow=''">
-//           <p style="font-size:1.6rem;font-weight:700;margin-bottom:0.25rem;">${r}</p>
-//           <p style="font-size:0.8rem;opacity:0.9;">${cnt} นักเรียน</p>
-//           <p style="font-size:0.75rem;opacity:0.75;margin-top:0.75rem;">แตะเพื่อตรวจระเบียบ →</p>
-//         </div>`;
-//       }).join('')}
-//     </div>`);
-// }
-
-
 // Helper: ตรวจสอบสถานะการตรวจวินัยของนักเรียนแต่ละคน (สืบทอดการตรวจรอบก่อนหน้ามาทั้งหมดอัตโนมัติ)
 function getStudentCheckState(student, monthId, round) {
   // 1. ตรวจสอบว่าในรอบปัจจุบันมีการบันทึกการตรวจหรือไม่
@@ -1143,86 +1117,8 @@ function renderCheckStudents() {
 // ============================================================
 // STUDENT SCORES
 // ============================================================
-// 1.โคดชุดนี้ เห็นคะแนนทุกห้อง
-// --------------------------------------------------------
-// function renderStudentScores() {
-//   const students = (selectedClassroom
-//     ? allData.filter(d=>d.type==='student'&&d.classroom===selectedClassroom)
-//     : allData.filter(d=>d.type==='student'))
-//     .sort((a,b)=>a.classroom.localeCompare(b.classroom)||parseInt(a.student_number)-parseInt(b.student_number));
-
-//   return layout(`
-//     <div class="print-header">
-//       <img src="https://lh3.googleusercontent.com/d/1F-tQOZZ_gZ06RC9-C7ajnopnONlki0sM" alt="Logo">
-//       <h1>${config.school_name||'โรงเรียน'}</h1>
-//       <h2>รายงานคะแนนนักเรียน${selectedClassroom?' — '+selectedClassroom:''}</h2>
-//       <p>ปีการศึกษา ${config.academic_year||''} &nbsp;|&nbsp; วันที่พิมพ์ ${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}</p>
-//       ${currentUser?`<p>ครูผู้ตรวจ: ${currentUser.teacher_name}${currentUser.classroom?' ('+currentUser.classroom+')':''}</p>`:''}
-//     </div>
-//     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-//       <div style="display:flex;align-items:center;gap:0.75rem;">
-//         ${hamburgerBtn()}
-//         <div>
-//           <h1 style="font-size:1.8rem;font-weight:700;color:#1e293b;">คะแนนนักเรียน${selectedClassroom?' — '+selectedClassroom:''}</h1>
-//           <p style="color:#64748b;font-size:0.85rem;">รายละเอียดคะแนนทุกรอบ</p>
-//         </div>
-//       </div>
-//       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;" class="no-print">
-//         <button onclick="doPrintScores()"
-//           style="padding:0.6rem 1.1rem;background:#475569;color:white;border:none;border-radius:0.6rem;font-family:'Prompt',sans-serif;cursor:pointer;font-size:0.82rem;font-weight:500;display:flex;align-items:center;gap:0.4rem;">
-//           🖨️ พิมพ์ PDF
-//         </button>
-//         <button onclick="currentView='classroom-select';render();"
-//           style="padding:0.6rem 1.1rem;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;border-radius:0.6rem;font-family:'Prompt',sans-serif;cursor:pointer;font-size:0.82rem;font-weight:500;">
-//           กลับ
-//         </button>
-//       </div>
-//     </div>
-//     <div style="background:white;border-radius:0.9rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-//       <div style="overflow-x:auto;">
-//         <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-//           <thead>
-//             <tr style="background:#1e40af;color:white;">
-//               ${!selectedClassroom?'<th style="padding:0.9rem;text-align:left;white-space:nowrap;">ห้อง</th>':''}
-//               <th style="padding:0.9rem;text-align:left;white-space:nowrap;">เลขที่</th>
-//               <th style="padding:0.9rem;text-align:left;white-space:nowrap;">ชื่อ-สกุล</th>
-//               ${MONTHS.map(m=>`<th style="padding:0.9rem;text-align:center;white-space:nowrap;font-size:0.78rem;">${m.name}</th>`).join('')}
-//               <th style="padding:0.9rem;text-align:center;white-space:nowrap;">รวม</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             ${students.map((s,i)=>{
-//               const total = scoreOf(s,'all');
-//               const tc = total>=80?'score-good':total>=60?'score-mid':'score-bad';
-//               return `<tr style="border-bottom:1px solid #f1f5f9;${i%2===0?'background:#fafbfc;':''}">
-//                 ${!selectedClassroom?`<td style="padding:0.8rem;font-size:0.8rem;"><span style="padding:0.2rem 0.65rem;background:#dbeafe;color:#1d4ed8;border-radius:9999px;font-weight:500;">${s.classroom}</span></td>`:''}
-//                 <td style="padding:0.8rem;font-weight:600;">${s.student_number}</td>
-//                 <td style="padding:0.8rem;">${s.student_name}</td>
-//                 ${MONTHS.map(m=>{
-//                   const sc = scoreOf(s, m.id);
-//                   const mc = sc>=80?'score-good':sc>=60?'score-mid':'score-bad';
-//                   return `<td style="padding:0.8rem;text-align:center;"><span class="score-badge ${mc}">${sc}</span></td>`;
-//                 }).join('')}
-//                 <td style="padding:0.8rem;text-align:center;"><span class="score-badge ${tc}" style="font-size:1rem;">${total}</span></td>
-//               </tr>`;
-//             }).join('')}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//     <div class="print-signature">
-//       <div class="sig-line"></div>
-//       <p class="sig-label">( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; )</p>
-//       <p class="sig-label">ครูผู้ตรวจระเบียบ</p>
-//       <p class="sig-date">วันที่ <span></span> / <span></span> / <span></span></p>
-//     </div>`);
-// }
-
-
-
-
-// 2. โคดชุดนี้ เห็นคะแนนเเฉพาะห้องตัวเอง
-// ---------------------------------------------------
+// STUDENT SCORES (เห็นตามสิทธิ์ผู้ใช้งาน)
+// ============================================================
 function renderStudentScores() {
   const isAdmin = currentUser?.teacher_username === 'admin';
 
