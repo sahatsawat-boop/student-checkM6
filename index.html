@@ -348,14 +348,26 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
         if (fnName === 'withSuccessHandler') return (cb) => { _success = cb; return runner; };
         if (fnName === 'withFailureHandler') return (cb) => { _failure = cb; return runner; };
         return (arg) => {
-          fetch(WEB_APP_URL, {
+          const apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
+          
+          fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg })
           })
           .then(res => res.json())
           .then(res => { if (_success) _success(res); })
-          .catch(err => { if (_failure) _failure(err); });
+          .catch(err => {
+            // สำรองหาก POST ติด CORS/Redirect ให้ใช้ GET สำหรับอ่านข้อมูล
+            if (['getInitData', 'getData', 'getConfig'].includes(fnName)) {
+              fetch(apiUrl)
+                .then(res => res.json())
+                .then(res => { if (_success) _success(res); })
+                .catch(e => { if (_failure) _failure(e); });
+            } else {
+              if (_failure) _failure(err);
+            }
+          });
         };
       }
     });
@@ -368,13 +380,12 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) {
         return runner[fnName].bind(runner);
       }
       return (arg) => {
-        fetch(WEB_APP_URL, {
+        const apiUrl = WEB_APP_URL + (WEB_APP_URL.includes('?') ? '&' : '?') + 'action=' + encodeURIComponent(fnName);
+        fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: fnName, payload: arg, data: arg, config: arg })
-        })
-        .then(res => res.json())
-        .catch(() => {});
+        }).catch(() => {});
       };
     }
   });
